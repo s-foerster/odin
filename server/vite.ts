@@ -1,12 +1,8 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
-
-const viteLogger = createLogger();
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -20,10 +16,15 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
+  // Dynamically import vite modules only in development
+  const { createServer: createViteServer, createLogger } = await import("vite");
+  const viteConfig = (await import("../vite.config.js")).default;
+  const viteLogger = createLogger();
+
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
-    allowedHosts: ['localhost'],
+    allowedHosts: ["localhost"],
   };
 
   const vite = await createViteServer({
@@ -80,8 +81,8 @@ export function serveStatic(app: Express) {
   app.use((req, res, next) => {
     const url = req.url;
     // Handle both regular JS files and JS files with query parameters
-    if (url && (url.endsWith('.js') || url.match(/\.js(\?|$)/))) {
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    if (url && (url.endsWith(".js") || url.match(/\.js(\?|$)/))) {
+      res.setHeader("Content-Type", "application/javascript; charset=utf-8");
     }
     next();
   });
