@@ -43,7 +43,7 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    console.error(`Server error: ${err.message || 'Unknown error'}`);
+    console.error(`Server error: ${err.message || "Unknown error"}`);
     if (err.stack) {
       console.error(err.stack);
     }
@@ -60,11 +60,11 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
+  // ALWAYS serve the app on port 3000
   // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen(port, () => {
+  // matches the internal_port specified in fly.toml
+  const port = process.env.PORT || 3000;
+  server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
 })();
