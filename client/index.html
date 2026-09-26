@@ -54,7 +54,7 @@
       // Handle 404 routing for SPA
       window.addEventListener('error', function(e) {
         if (e.target.tagName === 'SCRIPT' && e.target.src && e.target.src.includes('assets/')) {
-          window.location.href = '/';
+          window.location.href = '%BASE_URL%';
         }
       }, true);
 

@@ -1,5 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { handleApiError } from "@/utils/errorHandler";
+import { withBase } from "@/lib/base";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -24,7 +25,7 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const res = await fetch(withBase(url), {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -50,7 +51,7 @@ export const getQueryFn: <T>(options: {
       console.log("Requesting with URL:", url);
     }
     
-    const res = await fetch(url, {
+    const res = await fetch(withBase(url), {
       credentials: "include",
     });
 

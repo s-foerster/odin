@@ -2,6 +2,7 @@ import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
+import { withBase } from "@/lib/base";
 
 export const ActiveGameBanner = () => {
   const { t } = useTranslation();
@@ -15,7 +16,7 @@ export const ActiveGameBanner = () => {
   const handleResume = async () => {
     try {
       const playerId = sessionStorage.getItem('playerId');
-      const response = await fetch(`/api/games/${gameId}?playerId=${encodeURIComponent(playerId!)}`);
+      const response = await fetch(withBase(`/api/games/${gameId}?playerId=${encodeURIComponent(playerId!)}`));
       if (response.ok) {
         const game = await response.json();
         navigate(game.status === 'playing' ? `/game/${gameId}` : `/lobby/${gameId}`);

@@ -1,3 +1,5 @@
+import { withBase } from "@/lib/base";
+
 interface VoiceMessageProps {
   id: string;
   audioUrl: string;
@@ -6,7 +8,8 @@ interface VoiceMessageProps {
   timestamp: number;
 }
 
-function VoiceMessage({ id, audioUrl, duration, isCurrentUser, timestamp }: VoiceMessageProps) {
+function VoiceMessage({ id, audioUrl: rawAudioUrl, duration, isCurrentUser, timestamp }: VoiceMessageProps) {
+  const audioUrl = withBase(rawAudioUrl);
   return (
     <audio controls preload="metadata">
       <source src={audioUrl} type="audio/mpeg" />

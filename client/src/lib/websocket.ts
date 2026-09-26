@@ -1,4 +1,5 @@
 import { GameState, WebSocketMessage } from "@shared/schema";
+import { BASE } from "./base";
 
 // WebSocket connection singleton
 let socket: WebSocket | null = null;
@@ -74,7 +75,7 @@ export function connectToGameServer(gameId: string, playerId: string): WebSocket
   // Fix protocol to match the current page protocol
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const host = getCurrentHost();
-  const wsUrl = `${protocol}//${host}/ws`;
+  const wsUrl = `${protocol}//${host}${BASE}/ws`;
   
   console.log("Connecting to WebSocket at:", wsUrl);
   

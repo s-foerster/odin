@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { getConnectionStatus, forceReconnect } from '../lib/websocket';
+import { withBase } from '../lib/base';
 
 const SessionGuard: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [location, navigate] = useLocation();
@@ -15,7 +16,7 @@ const SessionGuard: React.FC<{children: React.ReactNode}> = ({ children }) => {
         // Check game status to determine where to redirect
         const checkGameStatus = async () => {
           try {
-            const response = await fetch(`/api/games/${gameId}?playerId=${encodeURIComponent(playerId)}`);
+            const response = await fetch(withBase(`/api/games/${gameId}?playerId=${encodeURIComponent(playerId)}`));
             if (response.ok) {
               const game = await response.json();
               

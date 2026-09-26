@@ -22,7 +22,8 @@ export default defineConfig({
         ]
       : []),
   ],
-  base: '/',
+  // BASE_PATH permet de servir l'app sous un sous-chemin (ex. /odin/). Par défaut : racine.
+  base: process.env.BASE_PATH || '/',
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),

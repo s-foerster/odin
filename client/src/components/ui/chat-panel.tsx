@@ -10,7 +10,11 @@ import { cn } from "@/lib/utils";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { VoiceMessage } from "@/components/ui/voice-message";
 import axios from "axios";
+import { withBase } from "@/lib/base";
 import "@/styles/voice-recorder.css";
+
+// VITE_VOICE_MESSAGES_DISABLED=true au build masque le bouton micro
+const VOICE_ENABLED = import.meta.env.VITE_VOICE_MESSAGES_DISABLED !== "true";
 
 interface ChatPanelProps {
   gameId: string;
@@ -256,7 +260,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       formData.append('duration', duration.toString());
       
       // Upload the voice message
-      await axios.post(`/api/games/${gameId}/voice-message`, formData, {
+      await axios.post(withBase(`/api/games/${gameId}/voice-message`), formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -368,6 +372,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             ) : null}
           
             <div className="flex gap-2">
+              {VOICE_ENABLED && (
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -377,6 +382,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
               >
                 <Mic className="h-5 w-5" />
               </Button>
+              )}
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}

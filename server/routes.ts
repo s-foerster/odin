@@ -958,6 +958,13 @@ app.post("/api/games/join", async (req: Request, res: Response, next: NextFuncti
   // Voice message upload endpoint
   app.post(
     "/api/games/:gameId/voice-message",
+    (req, res, next) => {
+      // VOICE_MESSAGES_DISABLED=true coupe les vocaux (ffmpeg) pour économiser la mémoire
+      if (process.env.VOICE_MESSAGES_DISABLED === "true") {
+        return res.status(503).json({ error: "Voice messages are disabled on this server" });
+      }
+      next();
+    },
     upload.single("audio"),
     async (req, res) => {
       try {
