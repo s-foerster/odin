@@ -14,12 +14,18 @@ interface CardComponentProps {
   className?: string;
 }
 
-// Largeur fluide : les cartes s'adaptent à l'écran du téléphone
+// Largeur fluide : les cartes s'adaptent à l'écran du téléphone.
+// En main, toutes les cartes tiennent sur une seule ligne : elles se partagent
+// la largeur (flex-1) et gardent une hauteur fixe, plus grande.
 const SIZE_CLASSES: Record<CardSize, { box: string; value: string; corner: string }> = {
-  hand: { box: "w-[clamp(2.5rem,11.6vw,4.25rem)]", value: "text-xl sm:text-2xl", corner: "text-[10px] sm:text-xs" },
-  table: { box: "w-[clamp(3rem,15vw,4.75rem)]", value: "text-2xl sm:text-3xl", corner: "text-[10px] sm:text-xs" },
-  pick: { box: "w-[clamp(3.5rem,19vw,5.25rem)]", value: "text-3xl", corner: "text-xs" },
-  mini: { box: "w-7", value: "text-sm", corner: "hidden" },
+  hand: {
+    box: "min-w-0 flex-1 basis-0 max-w-[4.5rem] h-[clamp(6rem,30vw,9rem)]",
+    value: "text-2xl sm:text-3xl",
+    corner: "text-[10px] sm:text-xs",
+  },
+  table: { box: "aspect-[2/3] w-[clamp(3rem,15vw,4.75rem)]", value: "text-2xl sm:text-3xl", corner: "text-[10px] sm:text-xs" },
+  pick: { box: "aspect-[2/3] w-[clamp(3.5rem,19vw,5.25rem)]", value: "text-3xl", corner: "text-xs" },
+  mini: { box: "aspect-[2/3] w-7", value: "text-sm", corner: "hidden" },
 };
 
 const CardComponent: React.FC<CardComponentProps> = ({
@@ -33,7 +39,7 @@ const CardComponent: React.FC<CardComponentProps> = ({
   const sizeClasses = SIZE_CLASSES[size];
 
   if (!showFace) {
-    return <div className={cn("aspect-[2/3] rounded-md bg-primary shadow-sm", sizeClasses.box, className)} />;
+    return <div className={cn("rounded-md bg-primary shadow-sm", sizeClasses.box, className)} />;
   }
 
   const symbol = getCardSymbol(card.color);
@@ -43,7 +49,8 @@ const CardComponent: React.FC<CardComponentProps> = ({
     <Tag
       type={onClick ? "button" : undefined}
       className={cn(
-        "relative flex aspect-[2/3] select-none flex-col rounded-lg shadow-md transition-transform duration-150",
+        "relative flex select-none flex-col rounded-lg shadow-md transition-transform duration-150",
+        "[text-shadow:0_1px_2px_rgba(0,0,0,0.35)]",
         "touch-manipulation",
         sizeClasses.box,
         getCardColorClass(card.color),

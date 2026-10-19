@@ -2,12 +2,12 @@
    Pas d'animation en boucle (économie de batterie) : le tour du joueur
    est signalé par une couleur fixe. */
 
-.card-red { color: #e53935; }
-.card-blue { color: #1e88e5; }
-.card-green { color: #43a047; }
-.card-yellow { color: #fdd835; }
-.card-purple { color: #8e24aa; }
-.card-orange { color: #fb8c00; }
+.card-red { color: #ff1744; }
+.card-blue { color: #2962ff; }
+.card-green { color: #00c853; }
+.card-yellow { color: #ffc400; }
+.card-purple { color: #d500f9; }
+.card-orange { color: #ff6d00; }
 
 html, body {
   overscroll-behavior: none;

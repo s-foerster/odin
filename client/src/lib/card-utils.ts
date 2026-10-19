@@ -8,17 +8,17 @@ export interface SelectedCard extends Card {
 export function getCardColorClass(color: CardColor): string {
   switch (color) {
     case "red":
-      return "bg-[#e53935] text-white";
+      return "bg-[#ff1744] text-white";
     case "blue":
-      return "bg-[#1e88e5] text-white";
+      return "bg-[#2962ff] text-white";
     case "green":
-      return "bg-[#43a047] text-white";
+      return "bg-[#00c853] text-white";
     case "yellow":
-      return "bg-[#fdd835] text-slate-900";
+      return "bg-[#ffc400] text-white";
     case "purple":
-      return "bg-[#8e24aa] text-white";
+      return "bg-[#d500f9] text-white";
     case "orange":
-      return "bg-[#fb8c00] text-white";
+      return "bg-[#ff6d00] text-white";
     default:
       return "bg-primary text-primary-foreground";
   }

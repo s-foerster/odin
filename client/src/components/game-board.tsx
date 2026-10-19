@@ -242,6 +242,19 @@ export default function GameBoard(props: GameBoardProps) {
       {/* Table */}
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-3">
         {myPickPending ? (
+          <>
+          {state.currentPlay.length > 0 && (
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("ui.pick.yourPlay")} · {playValue(state.currentPlay)}
+              </p>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {state.currentPlay.map((card) => (
+                  <CardComponent key={card.id} card={card} size="table" className="w-[clamp(2.25rem,10vw,3.25rem)]" />
+                ))}
+              </div>
+            </div>
+          )}
           <div className="flex w-full max-w-md flex-col items-center gap-3 rounded-xl border-2 border-primary bg-primary/5 p-3">
             <p className="text-base font-semibold">{t("ui.pick.title")}</p>
             <div className="flex flex-wrap justify-center gap-3">
@@ -251,6 +264,7 @@ export default function GameBoard(props: GameBoardProps) {
             </div>
             <p className="text-xs text-muted-foreground">{t("ui.pick.discard")}</p>
           </div>
+          </>
         ) : state.currentPlay.length > 0 ? (
           <>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -317,7 +331,7 @@ export default function GameBoard(props: GameBoardProps) {
             {sortMode === "color" ? t("ui.sort.color") : t("ui.sort.value")}
           </button>
         </div>
-        <div className="flex flex-wrap justify-center gap-1.5 pt-2">
+        <div className="flex flex-nowrap justify-center gap-1 pt-2">
           {hand.map((card) => (
             <CardComponent
               key={card.id}
