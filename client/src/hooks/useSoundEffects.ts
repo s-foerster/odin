@@ -5,6 +5,7 @@ import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
  */
 export function useSoundEffects() {
   const audioContextRef = useRef<AudioContext | null>(null);
+  const suspendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     // Load preference from localStorage with default true
     const savedPreference = localStorage.getItem('soundEnabled');
@@ -28,12 +29,22 @@ export function useSoundEffects() {
         console.error("Web Audio API not supported:", e);
       }
     }
-    return audioContextRef.current;
+    const ctx = audioContextRef.current;
+    if (ctx) {
+      // Le contexte audio n'est actif que le temps du son (économie de batterie)
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      if (suspendTimerRef.current) clearTimeout(suspendTimerRef.current);
+      suspendTimerRef.current = setTimeout(() => {
+        ctx.suspend().catch(() => {});
+      }, 1500);
+    }
+    return ctx;
   }, []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (suspendTimerRef.current) clearTimeout(suspendTimerRef.current);
       if (audioContextRef.current) {
         audioContextRef.current.close().catch(e => console.error("Error closing AudioContext:", e));
       }

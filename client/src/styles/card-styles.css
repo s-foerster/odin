@@ -1,104 +1,7 @@
-/* Card Game Styles */
+/* Styles du jeu.
+   Pas d'animation en boucle (économie de batterie) : le tour du joueur
+   est signalé par une couleur fixe. */
 
-/* Card styling */
-.card-component {
-  position: relative;
-  width: 70px;
-  height: 100px;
-  border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s;
-  user-select: none;
-}
-
-.card-component:hover {
-  transform: translateY(-5px);
-}
-
-.card-component.selected {
-  transform: translateY(-10px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.card-component .card-front,
-.card-component .card-back {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 5px;
-  overflow: hidden;
-}
-
-.card-component .card-back {
-  background: linear-gradient(135deg, #6200ee, #03dac6);
-  background-size: 200% 200%;
-  animation: gradientMove 3s ease infinite;
-}
-
-.card-component .card-back:after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 30px;
-  height: 30px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-}
-
-.card-component .card-value {
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.card-component .card-symbol {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 2rem;
-}
-
-/* Animation for card back gradient */
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Drop zone styling */
-.drop-zone {
-  min-height: 120px;
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.2s;
-}
-
-.drop-zone.active {
-  border-color: #6200ee;
-  background-color: rgba(98, 0, 238, 0.05);
-}
-
-/* Player hand area */
-.player-hand {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px;
-}
-
-/* Card colors */
 .card-red { color: #e53935; }
 .card-blue { color: #1e88e5; }
 .card-green { color: #43a047; }
@@ -106,43 +9,15 @@
 .card-purple { color: #8e24aa; }
 .card-orange { color: #fb8c00; }
 
-/* Your turn highlight effect */
-.your-turn-highlight {
-  animation: yourTurnPulse 2s ease-in-out infinite;
-  position: relative;
+html, body {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.your-turn-highlight::after {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: -8px;
-  right: -8px;
-  bottom: -8px;
-  border-radius: 12px;
-  background: rgba(98, 0, 238, 0.15);
-  z-index: -1;
-  animation: yourTurnGlow 2s ease-in-out infinite;
-}
-
-@keyframes yourTurnPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
-}
-
-@keyframes yourTurnGlow {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.5; }
-}
-
-/* Responsive adjustments for small screens */
-@media (max-width: 640px) {
-  .card-component {
-    width: 50px;
-    height: 70px;
-  }
-  
-  .card-component .card-value {
-    font-size: 1rem;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

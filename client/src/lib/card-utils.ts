@@ -14,7 +14,7 @@ export function getCardColorClass(color: CardColor): string {
     case "green":
       return "bg-[#43a047] text-white";
     case "yellow":
-      return "bg-[#fdd835] text-white";
+      return "bg-[#fdd835] text-slate-900";
     case "purple":
       return "bg-[#8e24aa] text-white";
     case "orange":
@@ -65,6 +65,12 @@ export function canAddCardToSelection(card: Card, selectedCards: Card[]): boolea
   
   // Can add if same value or same color as already selected cards
   return card.value === firstCard.value || card.color === firstCard.color;
+}
+
+// Sort cards by value then color
+export function sortCardsByValue(cards: Card[]): Card[] {
+  const colorOrder: Record<CardColor, number> = { red: 0, orange: 1, yellow: 2, green: 3, blue: 4, purple: 5 };
+  return [...cards].sort((a, b) => b.value - a.value || colorOrder[a.color] - colorOrder[b.color]);
 }
 
 // Sort cards by color then value

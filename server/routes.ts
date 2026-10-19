@@ -21,6 +21,7 @@ import {
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { filterGameStateForPlayer } from "./game";
+import { chooseBotAction } from "@shared/bot";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -36,9 +37,12 @@ ffmpeg.setFfmpegPath(ffmpegPath!);
 ffmpeg.setFfprobePath(ffprobePath.path);
 
 // Constants
-const CONNECTION_TIMEOUT = 45000; // 45 seconds
+const CONNECTION_TIMEOUT = 70000; // 70 s (2 pings manqués)
 const HOST_REASSIGN_DELAY = 5 * 60 * 1000; // 5 minutes
 const GAME_CLEANUP_DELAY = 24 * 60 * 60 * 1000; // 24 hours
+const FINISHED_GAME_TTL = 30 * 60 * 1000; // partie terminée : supprimée après 30 min
+const ABANDONED_GAME_TTL = 2 * 60 * 60 * 1000; // plus aucun humain connecté : 2 h
+const BOT_TURN_DELAY = 900; // ms, pour que les humains voient le coup des bots
 
 // Map of connected clients by game ID and player ID
 const connections = new Map<string, Map<string, WebSocket>>();
@@ -63,10 +67,6 @@ const upload = multer({
 function broadcastGameState(gameId: string, gameState: GameState) {
   const gameConnections = connections.get(gameId);
   if (!gameConnections) return;
-
-  console.log(
-    `Broadcasting game state to ${gameConnections.size} players in game ${gameId}`
-  );
 
   // Track which players received the update successfully
   const failedConnections: Array<[string, WebSocket]> = [];
@@ -184,8 +184,8 @@ function setupPingInterval(wss: WebSocketServer) {
 
           // Check if we haven't sent any messages in a while
           const lastTime = lastMessageTime.get(socket) || 0;
-          if (now - lastTime > 30000) {
-            // 30 seconds
+          if (now - lastTime > 50000) {
+            // 50 seconds
             // Send an empty ping message to keep connection alive
             const pingMessage: WebSocketMessage = { type: "ping" };
             socket.send(JSON.stringify(pingMessage));
@@ -202,7 +202,7 @@ function setupPingInterval(wss: WebSocketServer) {
         }
       }
     });
-  }, 15000); // Check every 15 seconds
+  }, 25000); // Toutes les 25 s : réveille moins souvent la radio du téléphone
 }
 
 // Check for inactive players and mark them as disconnected
@@ -227,7 +227,9 @@ function setupPlayerActivityCheck() {
       }
 
       // Check for completely abandoned games
-      const allDisconnected = game.players.every((p) => !p.connected);
+      const allDisconnected = game.players
+        .filter((p) => !p.isBot)
+        .every((p) => !p.connected);
       if (allDisconnected) {
         const lastActivity = Math.max(...Array.from(playerMap.values()));
         if (now - lastActivity > GAME_CLEANUP_DELAY) {
@@ -343,6 +345,70 @@ function getMimeType(fileName: string): string {
   }
 }
 
+// ---------- Bots ----------
+const botTimers = new Map<string, NodeJS.Timeout>();
+
+// Programme le coup du bot si c'est à lui de jouer
+function scheduleBots(gameId: string) {
+  if (botTimers.has(gameId)) return;
+  storage.getGame(gameId).then((game) => {
+    if (!game || game.status !== "playing" || game.roundWinner) return;
+    if (!game.players[game.currentTurn]?.isBot) return;
+    if (botTimers.has(gameId)) return;
+    botTimers.set(
+      gameId,
+      setTimeout(() => {
+        botTimers.delete(gameId);
+        runBotTurn(gameId).catch((e) => console.error("Bot error:", e));
+      }, BOT_TURN_DELAY)
+    );
+  });
+}
+
+async function runBotTurn(gameId: string) {
+  const game = await storage.getGame(gameId);
+  if (!game) return;
+  const bot = game.players[game.currentTurn];
+  if (!bot?.isBot) return;
+  const action = chooseBotAction(game, bot.id);
+  if (!action) return;
+
+  let updated: GameState;
+  if (action.type === "play") updated = await storage.playCards(gameId, bot.id, action.cards);
+  else if (action.type === "pick") updated = await storage.pickCard(gameId, bot.id, action.cardId);
+  else updated = await storage.passTurn(gameId, bot.id);
+
+  broadcastGameState(gameId, updated);
+  scheduleBots(gameId);
+}
+
+// ---------- Nettoyage des parties (libère les codes à 4 chiffres) ----------
+async function cleanupGames() {
+  const now = Date.now();
+  for (const game of storage.getAllGames()) {
+    const idle = now - storage.getLastActivity(game.id);
+    const humans = game.players.filter((p) => !p.isBot);
+    const someoneConnected = humans.some((p) => p.connected);
+    const expired =
+      (game.status === "finished" && idle > FINISHED_GAME_TTL) ||
+      (!someoneConnected && idle > ABANDONED_GAME_TTL) ||
+      idle > GAME_CLEANUP_DELAY;
+    if (!expired) continue;
+
+    const timer = botTimers.get(game.id);
+    if (timer) clearTimeout(timer);
+    botTimers.delete(game.id);
+    connections.get(game.id)?.forEach((socket) => {
+      try {
+        socket.close(1000, "Game expired");
+      } catch {}
+    });
+    connections.delete(game.id);
+    lastPlayerActivity.delete(game.id);
+    await storage.deleteGame(game.id);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
@@ -354,6 +420,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup player activity check
   setupPlayerActivityCheck();
+
+  // Nettoyage périodique des parties terminées ou abandonnées
+  setInterval(() => {
+    cleanupGames().catch((e) => console.error("Cleanup error:", e));
+  }, 5 * 60 * 1000);
 
   wss.on("connection", (socket: WebSocket) => {
     console.log("WebSocket client connected");
@@ -622,7 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 const JoinGameRequestSchema = z.object({
   playerName: z.string().min(1).max(20),
-  roomCode: z.string().length(6),
+  roomCode: z.string().trim().regex(/^\d{4}$/),
   joinAsSpectator: z.boolean().optional(), // Added for spectator mode
 });
 
@@ -630,7 +701,7 @@ app.post("/api/games/join", async (req: Request, res: Response, next: NextFuncti
     try {
       const { playerName, roomCode, joinAsSpectator } = JoinGameRequestSchema.parse(req.body);
 
-      const game = await storage.getGameByRoomCode(roomCode.toUpperCase());
+      const game = await storage.getGameByRoomCode(roomCode);
       if (!game) {
         return next(new GameError(ErrorCode.GAME_NOT_FOUND));
       }
@@ -688,6 +759,7 @@ app.post("/api/games/join", async (req: Request, res: Response, next: NextFuncti
       res.json({
         gameId: updatedGame.id,
         playerId: newPlayer.id,
+        roomCode: updatedGame.roomCode,
         gameState: filterGameStateForPlayer(updatedGame, newPlayer.id)
       });
     } catch (error) {
@@ -761,9 +833,13 @@ app.post("/api/games/join", async (req: Request, res: Response, next: NextFuncti
 
       // Broadcast game started to all clients
       broadcastGameState(gameId, updatedGame);
+      scheduleBots(gameId);
 
       res.status(200).json({ success: true });
     } catch (error) {
+      if (error instanceof GameError) {
+        return res.status(400).json({ message: error.message });
+      }
       console.error("Start game error:", error);
       res.status(500).json({ message: "Failed to start game" });
     }
@@ -817,6 +893,7 @@ app.post("/api/games/join", async (req: Request, res: Response, next: NextFuncti
 
         // Broadcast updated state to all clients
         broadcastGameState(gameId, updatedGame);
+        scheduleBots(gameId);
 
         res.status(200).json({ success: true });
       } catch (error) {
@@ -859,6 +936,7 @@ app.post("/api/games/join", async (req: Request, res: Response, next: NextFuncti
 
         // Broadcast updated state to all clients
         broadcastGameState(gameId, updatedGame);
+        scheduleBots(gameId);
 
         res.status(200).json({ success: true });
       } catch (error) {
@@ -899,6 +977,7 @@ app.post("/api/games/join", async (req: Request, res: Response, next: NextFuncti
 
         // Broadcast updated state to all clients
         broadcastGameState(gameId, updatedGame);
+        scheduleBots(gameId);
 
         res.status(200).json({ success: true });
       } catch (error) {
@@ -947,11 +1026,46 @@ app.post("/api/games/join", async (req: Request, res: Response, next: NextFuncti
 
       // Broadcast updated state to all clients
       broadcastGameState(gameId, updatedGame);
+      scheduleBots(gameId);
 
       res.status(200).json({ success: true });
     } catch (error) {
       console.error("Start new round error:", error);
       res.status(500).json({ message: "Failed to start new round" });
+    }
+  });
+
+  // Ajouter / retirer un bot dans le salon (hôte uniquement)
+  const requireHost = async (gameId: string, playerId: unknown) => {
+    const game = await storage.getGame(gameId);
+    if (!game) throw new GameError(ErrorCode.GAME_NOT_FOUND);
+    const player = game.players.find((p) => p.id === playerId);
+    if (!player) throw new GameError(ErrorCode.PLAYER_NOT_FOUND);
+    if (!player.isHost) throw new GameError(ErrorCode.INVALID_ACTION);
+    return game;
+  };
+
+  app.post("/api/games/:gameId/bots", async (req, res, next) => {
+    try {
+      await requireHost(req.params.gameId, req.body?.playerId);
+      const updated = await storage.addBot(req.params.gameId);
+      broadcastGameState(updated.id, updated);
+      res.status(200).json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/games/:gameId/bots/remove", async (req, res, next) => {
+    try {
+      const game = await requireHost(req.params.gameId, req.body?.playerId);
+      const bot = game.players.find((p) => p.id === req.body?.botId && p.isBot);
+      if (!bot) throw new GameError(ErrorCode.PLAYER_NOT_FOUND);
+      const updated = await storage.removePlayer(game.id, bot.id);
+      broadcastGameState(updated.id, updated);
+      res.status(200).json({ success: true });
+    } catch (error) {
+      next(error);
     }
   });
 

@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { Trophy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface GameScore {
   name: string;
@@ -8,70 +10,51 @@ interface GameScore {
 interface GameEndModalProps {
   winnerName: string;
   scores: GameScore[];
-  onNewGame: () => void;
-  onBackToLobby: () => void;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel: string;
+  onSecondary: () => void;
 }
 
 const GameEndModal: React.FC<GameEndModalProps> = ({
   winnerName,
   scores,
-  onNewGame,
-  onBackToLobby
+  primaryLabel,
+  onPrimary,
+  secondaryLabel,
+  onSecondary,
 }) => {
+  const { t } = useTranslation();
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 p-4">
-      <div className="bg-card rounded-lg shadow-lg p-6 max-w-md w-full mx-auto">
-        <div className="text-center mb-6">
-          <span className="inline-block p-3 bg-primary/10 text-primary rounded-full mb-2">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-8 w-8" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" 
-              />
-            </svg>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+      <div className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-lg bg-card p-5 shadow-lg">
+        <div className="mb-4 text-center">
+          <span className="mb-2 inline-flex rounded-full bg-amber-100 p-3 text-amber-600">
+            <Trophy className="h-8 w-8" />
           </span>
-          <h3 className="text-xl font-medium mb-2">Game Over!</h3>
-          <p className="text-muted-foreground">
-            Point limit reached
-          </p>
+          <h3 className="text-xl font-semibold">{t("ui.end.title")}</h3>
+          <p className="text-muted-foreground">{t("ui.end.winner", { name: winnerName })}</p>
         </div>
-        
-        <div className="bg-muted p-4 rounded-lg mb-6">
-          <h4 className="font-medium mb-2">Final Scores:</h4>
-          <ul className="space-y-2">
-            {scores.map((score, index) => (
-              <li key={index} className="flex justify-between">
-                <span>{score.name}:</span>
-                <span className={index === 0 ? "text-success font-medium" : ""}>
-                  {score.score} points{index === 0 ? " (Winner!)" : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        
-        <div className="flex flex-col gap-3">
-          <Button
-            className="w-full"
-            onClick={onBackToLobby}
-          >
-            Back to Lobby
+
+        <ul className="mb-5 space-y-1 rounded-lg bg-muted p-3">
+          {scores.map((score, index) => (
+            <li key={index} className="flex justify-between">
+              <span className={index === 0 ? "font-semibold" : ""}>
+                {index + 1}. {score.name}
+              </span>
+              <span className="tabular-nums">
+                {score.score} {t("ui.pts")}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="flex flex-col gap-2">
+          <Button className="h-11 w-full" onClick={onPrimary}>
+            {primaryLabel}
           </Button>
-          
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={onNewGame}
-          >
-            New Game
+          <Button variant="outline" className="h-11 w-full" onClick={onSecondary}>
+            {secondaryLabel}
           </Button>
         </div>
       </div>

@@ -23,6 +23,12 @@ export function handleApiError(response: ApiResponse | string): string {
     return mapErrorToTranslationKey(response);
   }
 
+  // Réponse simple { message } (routes de jeu) : le message est souvent une clé de traduction
+  const plain = response as unknown as { message?: string; error?: unknown };
+  if (typeof plain.message === 'string' && !plain.error) {
+    return mapErrorToTranslationKey(plain.message);
+  }
+
   // Check if it's an API response with error data
   if (!response.success && response.error) {
     // If the error has a code, use it as the translation key
@@ -61,6 +67,11 @@ function mapErrorToTranslationKey(errorMessage: string): string {
     'All cards played must be the same value or the same color': 'error.card.mustPlaySameType',
     'Must play exactly one card on the first turn of the round': 'error.card.mustPlayFirstCard'
   };
+
+  // Le serveur envoie directement une clé de traduction (ex. "error.card.mustPlayHigherValue")
+  if (/^error\.[a-zA-Z.]+$/.test(errorMessage)) {
+    return t(errorMessage);
+  }
 
   // Look for exact matches
   if (errorMap[errorMessage]) {

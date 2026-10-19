@@ -35,6 +35,7 @@ export interface Player {
   score: number;
   connected: boolean;
   isSpectator?: boolean; // Added for spectator mode
+  isBot?: boolean; // Joueur contrôlé par l'ordinateur
 }
 
 export interface GameState {
@@ -49,8 +50,11 @@ export interface GameState {
   roundWinner: string | null;
   gameWinner: string | null;
   pointLimit: number;
+  // Joueur qui a posé les cartes actuellement au centre (currentPlay)
+  currentPlayBy?: string | null;
   lastAction: {
-    type: "play" | "pass" | "pick" | "round_end" | "game_end" | null;
+    // "clear" : tout le monde a passé, la table est vidée
+    type: "play" | "pass" | "pick" | "clear" | "round_end" | "game_end" | null;
     playerId: string | null;
     cards?: Card[];
   };
@@ -65,7 +69,7 @@ export interface CreateGameRequest {
 
 export interface JoinGameRequest {
   playerName: string;
-  roomCode: string;
+  roomCode: string; // 4 chiffres
   joinAsSpectator?: boolean; // Optional: true if joining an ongoing game as spectator
 }
 

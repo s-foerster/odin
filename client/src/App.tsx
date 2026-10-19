@@ -12,11 +12,13 @@ import { LanguageProvider } from "./lib/LanguageContext";
 const NotFound = lazy(() => import(/* webpackChunkName: "notfound" */ "@/pages/not-found"));
 const Home = lazy(() => import(/* webpackChunkName: "home" */ "@/pages/home"));
 const Game = lazy(() => import(/* webpackChunkName: "game" */ "@/pages/game"));
+const OfflineSetup = lazy(() => import("@/components/offline-setup-screen"));
+const LocalGame = lazy(() => import("@/components/local-game-screen"));
 
 // Loading fallback component
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+    <div className="motion-safe:animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
   </div>
 );
 
@@ -39,6 +41,8 @@ function Router() {
         <LazyRoute path="/" component={Home} />
         <LazyRoute path="/create" component={Home} />
         <LazyRoute path="/join" component={Home} />
+        <LazyRoute path="/offline" component={OfflineSetup} />
+        <LazyRoute path="/offline/play" component={LocalGame} />
         <LazyRoute path="/game/:gameId" component={Game} />
         <LazyRoute path="/lobby/:gameId" component={Game} />
         <LazyRoute component={NotFound} />

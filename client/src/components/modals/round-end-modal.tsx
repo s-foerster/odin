@@ -35,7 +35,7 @@ const Confetti = () => {
     const colors = ["#FFD700", "#FF6347", "#4169E1", "#32CD32", "#9370DB", "#FF69B4"];
     const newParticles = [];
     
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 30; i++) {
       newParticles.push({
         x: Math.random() * 100,
         y: -20 - Math.random() * 10,
@@ -47,8 +47,12 @@ const Confetti = () => {
     
     setParticles(newParticles);
     
-    // Only play sound if it hasn't been played yet
-    if (!soundPlayedRef.current) {
+    // Only play sound if it hasn't been played yet (et si le son est activé)
+    let soundOn = true;
+    try {
+      soundOn = localStorage.getItem('soundEnabled') !== 'false';
+    } catch {}
+    if (!soundPlayedRef.current && soundOn) {
       soundPlayedRef.current = true;
       
       try {
@@ -130,6 +134,7 @@ const Confetti = () => {
 
 // Winner Card component
 const WinnerCard = ({ name }: { name: string }) => {
+  const { t } = useTranslation();
   return (
     <motion.div
       className="bg-gradient-to-r from-yellow-500/20 via-yellow-300/20 to-yellow-500/20 rounded-lg p-4 mb-4 border border-yellow-400 relative overflow-hidden"
@@ -153,7 +158,7 @@ const WinnerCard = ({ name }: { name: string }) => {
           
           <div>
             <h4 className="text-lg font-bold text-yellow-500 flex items-center">
-              Winner
+              {t('game.winner')}
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -217,7 +222,7 @@ const RoundEndModal: React.FC<RoundEndModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-40 p-4">
       {showConfetti && <Confetti />}
       <motion.div 
-        className="bg-card rounded-lg shadow-lg p-6 max-w-md w-full mx-auto overflow-hidden"
+        className="bg-card rounded-lg shadow-lg p-5 max-w-md w-full mx-auto max-h-[92dvh] overflow-y-auto"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3, type: "spring", stiffness: 260, damping: 20 }}
@@ -246,7 +251,7 @@ const RoundEndModal: React.FC<RoundEndModalProps> = ({
               <motion.span 
                 className="absolute inset-0 rounded-full bg-success/10"
                 animate={{ scale: [1, 1.5, 1], opacity: [0.7, 0, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
+                transition={{ duration: 1.5 }}
               />
             </span>
           </motion.div>
@@ -268,11 +273,11 @@ const RoundEndModal: React.FC<RoundEndModalProps> = ({
             <Award className="mr-2 h-5 w-5" />
             {t('game.roundScores')}:
           </h4>
-          <ul className="space-y-3 max-h-60 overflow-y-auto pr-2">
+          <ul className="space-y-2 max-h-60 overflow-y-auto pr-2">
             {sortedScores.map((score, index) => (
               <motion.li 
                 key={index} 
-                className={`flex justify-between items-center p-3 rounded-md ${
+                className={`flex justify-between items-center p-2 rounded-md ${
                   index === 0 
                     ? "bg-gradient-to-r from-success/10 to-success/5 border border-success/20" 
                     : "hover:bg-muted-foreground/5"
@@ -296,9 +301,7 @@ const RoundEndModal: React.FC<RoundEndModalProps> = ({
                         }}
                         transition={{ 
                           duration: 2,
-                          times: [0, 0.3, 0.6, 1],
-                          repeat: Infinity,
-                          repeatDelay: 2
+                          times: [0, 0.3, 0.6, 1]
                         }}
                       >
                         <Trophy className="h-4 w-4" />
@@ -320,7 +323,7 @@ const RoundEndModal: React.FC<RoundEndModalProps> = ({
                     +{score.cards} {t('game.points')}
                   </motion.span>
                   
-                  <div className="flex items-center gap-1">
+                  <div className="hidden items-center gap-1 sm:flex">
                     {[...Array(score.cards || 1)].map((_, i) => (
                       <motion.div 
                         key={i} 
@@ -369,7 +372,7 @@ const RoundEndModal: React.FC<RoundEndModalProps> = ({
                       {t('game.starting')}
                       <motion.span
                         animate={{ opacity: [0, 1, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop" }}
+                        transition={{ duration: 1.5 }}
                         className="ml-1"
                       >
                         ...
@@ -390,9 +393,7 @@ const RoundEndModal: React.FC<RoundEndModalProps> = ({
                     scale: [1, 1, 1.1, 1.1, 1, 1]
                   }}
                   transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    repeatDelay: 3
+                    duration: 2
                   }}
                   className="mr-2 text-primary"
                 >

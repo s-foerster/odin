@@ -12,6 +12,26 @@ let currentGameId: string | null = null;
 let currentPlayerId: string | null = null;
 let isReconnecting = false;
 
+// Abonnement aux changements d'état de la connexion (évite de vérifier en boucle)
+export type ConnectionStatus = "connected" | "connecting" | "disconnected" | "reconnecting";
+const statusListeners = new Set<(status: ConnectionStatus) => void>();
+let lastEmittedStatus: ConnectionStatus | null = null;
+
+function emitStatus() {
+  const status = getConnectionStatus();
+  if (status === lastEmittedStatus) return;
+  lastEmittedStatus = status;
+  statusListeners.forEach((listener) => listener(status));
+}
+
+export function onConnectionStatusChange(listener: (status: ConnectionStatus) => void) {
+  statusListeners.add(listener);
+  listener(getConnectionStatus());
+  return () => {
+    statusListeners.delete(listener);
+  };
+}
+
 export function connectToGameServer(gameId: string, playerId: string): WebSocket {
   // Check for valid inputs - This helps prevent the React error and WebSocket issues
   if (!gameId || !playerId) {
@@ -52,25 +72,21 @@ export function connectToGameServer(gameId: string, playerId: string): WebSocket
     }
   }
 
-  // Close existing socket if it exists
+  // Close existing socket if it exists (sans déclencher de reconnexion)
   if (socket) {
     try {
-      socket.close();
+      socket.onclose = null;
+      socket.onerror = null;
+      socket.onmessage = null;
+      socket.close(1000);
     } catch (e) {
       console.error("Error closing existing socket:", e);
     }
     socket = null;
   }
 
-  // Try to determine the correct WebSocket URL by checking the page URL
-  const getCurrentHost = () => {
-    // For production deployments like koyeb where the port might be different
-    const host = window.location.hostname;
-    // For local development, use the port 5000
-    // For production, don't specify port as it's handled by the proxy
-    const isLocalhost = host === "localhost" || host === "127.0.0.1";
-    return isLocalhost ? `${host}:5000` : host;
-  };
+  // Même hôte et même port que la page (le serveur Express sert aussi /ws)
+  const getCurrentHost = () => window.location.host;
 
   // Fix protocol to match the current page protocol
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -85,12 +101,14 @@ export function connectToGameServer(gameId: string, playerId: string): WebSocket
     console.error("Error creating WebSocket:", error);
     throw error;
   }
+  emitStatus();
   
   socket.onopen = () => {
     console.log("WebSocket connected");
     // Reset reconnection state on successful connection
     reconnectAttempts = 0;
     isReconnecting = false;
+    emitStatus();
     
     // Send identity message
     const message: WebSocketMessage = {
@@ -126,6 +144,7 @@ export function connectToGameServer(gameId: string, playerId: string): WebSocket
   
   socket.onclose = (event) => {
     console.log(`WebSocket disconnected. Code: ${event.code}, Reason: ${event.reason}`);
+    emitStatus();
     
     // Don't attempt to reconnect if this is a normal closure or if we're already in the reconnect process
     if (event.code === 1000 || isReconnecting) {
@@ -177,6 +196,7 @@ function attemptReconnect() {
   }
   
   isReconnecting = true;
+  emitStatus();
   
   // Clear any existing reconnect interval
   if (reconnectInterval) {
@@ -240,6 +260,7 @@ export function disconnectFromGameServer() {
     }
     socket = null;
   }
+  emitStatus();
   
   // Clear message handlers
   messageHandlers = [];

@@ -1,7 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
-import Backend from "i18next-http-backend";
+import { uiEn, uiFr } from "./i18n-ui";
 
 // Translation resources
 const resources = {
@@ -395,13 +395,16 @@ const resources = {
   },
 };
 
+// Textes de la nouvelle interface (remplacent les anciens si même clé)
+Object.assign(resources.en.translation, uiEn);
+Object.assign(resources.fr.translation, uiFr);
+
 i18n
-  .use(Backend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: "en",
+    fallbackLng: "fr",
     debug: process.env.NODE_ENV === "development",
     interpolation: {
       escapeValue: false, // not needed for React

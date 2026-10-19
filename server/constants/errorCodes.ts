@@ -22,6 +22,8 @@ export enum ErrorCode {
   
   // Other errors
   CANNOT_PASS = 'error.game.cannotPass',
+  MUST_PLAY_TWO_PLAYERS = 'error.game.mustPlayTwoPlayers',
+  PICK_PENDING = 'error.game.pickPending',
   INVALID_ACTION = 'error.game.invalidAction',
   SERVER_ERROR = 'error.server.internal',
   GAME_FINISHED = 'This game has already finished',

@@ -9,6 +9,7 @@ import { ArrowLeft, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LanguageSelector from "@/components/ui/language-selector";
+import { readSavedName, saveName } from "@/components/form-bits";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,8 +26,12 @@ const JoinGameScreen: React.FC = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   
-  const [playerName, setPlayerName] = useState("");
-  const [roomCode, setRoomCode] = useState("");
+  const [playerName, setPlayerName] = useState(readSavedName);
+  // Lien partagé : /join?code=1234
+  const [roomCode, setRoomCode] = useState(() => {
+    const code = new URLSearchParams(window.location.search).get("code") || "";
+    return code.replace(/\D/g, "").slice(0, 4);
+  });
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSpectateConfirm, setShowSpectateConfirm] = useState(false);
@@ -37,10 +42,11 @@ const JoinGameScreen: React.FC = () => {
       return;
     }
     
-    if (!roomCode.trim()) {
-      setError(t('join.codeRequired'));
+    if (!/^\d{4}$/.test(roomCode.trim())) {
+      setError(t('ui.join.codeFormat'));
       return;
     }
+    saveName(playerName.trim());
     
     try {
       setIsJoining(true);
@@ -48,7 +54,7 @@ const JoinGameScreen: React.FC = () => {
       
       const response = await apiRequest("POST", "/api/games/join", {
         playerName: playerName.trim(),
-        roomCode: roomCode.trim().toUpperCase()
+        roomCode: roomCode.trim()
       });
       
       const data = await response.json();
@@ -75,8 +81,11 @@ const JoinGameScreen: React.FC = () => {
         setError(t('join.gameFull'));
       } else if (errorMessage.includes("This game has already finished")) {
         setError(t('join.gameFinishedError'));
+      } else if (/^(400|404): /.test(errorMessage) && !/serveur|server/i.test(errorMessage)) {
+        // Message déjà traduit par le serveur (nom déjà pris, partie introuvable…)
+        setError(errorMessage.replace(/^\d+:\s*/, ""));
       } else {
-        setError(t('join.invalidCode'));
+        setError(navigator.onLine ? t('join.invalidCode') : t('ui.onlineOnly'));
       }
     } finally {
       setIsJoining(false);
@@ -91,7 +100,7 @@ const JoinGameScreen: React.FC = () => {
       
       const response = await apiRequest("POST", "/api/games/join", {
         playerName: playerName.trim(),
-        roomCode: roomCode.trim().toUpperCase(),
+        roomCode: roomCode.trim(),
         joinAsSpectator: true, // Join as spectator
       });
       
@@ -100,7 +109,7 @@ const JoinGameScreen: React.FC = () => {
       sessionStorage.setItem("gameId", data.gameId);
       sessionStorage.setItem("playerId", data.playerId);
       sessionStorage.setItem("playerName", playerName);
-      sessionStorage.setItem("roomCode", data.roomCode); // Assuming server returns roomCode on join
+      sessionStorage.setItem("roomCode", data.roomCode);
       
       navigate(`/lobby/${data.gameId}`);
       
@@ -118,7 +127,7 @@ const JoinGameScreen: React.FC = () => {
   };
   
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] p-4 bg-background">
       <div className="absolute top-4 right-4">
         <LanguageSelector />
       </div>
@@ -149,6 +158,7 @@ const JoinGameScreen: React.FC = () => {
               placeholder={t('create.namePlaceholder')}
               className="w-full"
               maxLength={20}
+              autoComplete="nickname"
             />
           </div>
           
@@ -159,11 +169,17 @@ const JoinGameScreen: React.FC = () => {
             <Input
               id="joinRoomCode"
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="off"
               value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              placeholder={t('join.roomCodePlaceholder')}
-              className="w-full uppercase"
-              maxLength={6}
+              onChange={(e) => setRoomCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleJoinGame();
+              }}
+              placeholder="1234"
+              className="h-14 w-full text-center font-mono text-3xl tracking-[0.4em]"
+              maxLength={4}
             />
           </div>
           
@@ -175,7 +191,7 @@ const JoinGameScreen: React.FC = () => {
           )}
           
           <Button
-            className="w-full"
+            className="h-12 w-full text-base"
             onClick={handleJoinGame}
             disabled={isJoining}
           >

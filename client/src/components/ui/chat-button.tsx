@@ -11,7 +11,7 @@ interface ChatButtonProps {
   gameId: string;
   playerId: string;
   playerName: string;
-  position?: "bottom-right" | "top-right";
+  position?: "bottom-right" | "top-right" | "inline";
 }
 
 export const ChatButton: React.FC<ChatButtonProps> = ({
@@ -60,21 +60,25 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
     }
   };
 
-  const positionClasses = position === "bottom-right" 
-    ? "bottom-4 right-4" 
-    : "top-4 right-4";
+  const positionClasses =
+    position === "inline"
+      ? "relative h-10 w-10"
+      : position === "bottom-right"
+        ? "fixed bottom-4 right-4 z-40 shadow-lg hover:shadow-xl"
+        : "fixed top-4 right-4 z-40 shadow-lg hover:shadow-xl";
 
   return (
     <>
       <Button
         onClick={handleToggle}
         size="icon"
-        className={`fixed ${positionClasses} z-40 shadow-lg hover:shadow-xl transition-all`}
+        variant={position === "inline" ? "ghost" : "default"}
+        className={`${positionClasses} transition-all`}
         aria-label="Open chat"
       >
         <MessageCircle size={22} />
         {unreadCount > 0 && (
-          <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

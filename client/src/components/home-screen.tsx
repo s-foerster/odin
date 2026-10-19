@@ -4,79 +4,50 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import LanguageSelector from "@/components/ui/language-selector";
 import { ActiveGameBanner } from "@/components/active-game-banner";
+import { Bot, LogIn, Plus } from "lucide-react";
 
 const HomeScreen: React.FC = () => {
   const [, navigate] = useLocation();
   const { t } = useTranslation();
   
-  const handleCreateGame = () => {
-    navigate("/create");
-  };
-  
-  const handleJoinGame = () => {
-    navigate("/join");
-  };
+
+  const online = typeof navigator === "undefined" ? true : navigator.onLine;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
-      <div className="absolute top-4 right-4">
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background p-4">
+      <div className="absolute right-4 top-4">
         <LanguageSelector />
       </div>
-      
-      <div className="text-center mb-8">
+
+      <div className="mb-6 w-full max-w-sm text-center">
         <ActiveGameBanner />
-        <h1 className="text-4xl md:text-6xl font-bold text-primary mb-4">{t('app.title')}</h1>
-        <p className="text-lg text-muted-foreground max-w-md mx-auto">
-          {t('app.description')}
-        </p>
+        <h1 className="mb-2 text-5xl font-bold text-primary md:text-6xl">Odin</h1>
+        <p className="text-muted-foreground">{t("app.description")}</p>
       </div>
-      
-      <div className="flex flex-col md:flex-row gap-4 mt-6">
-        <Button 
-          size="lg"
-          className="flex items-center" 
-          onClick={handleCreateGame}
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-5 w-5 mr-2" 
-            viewBox="0 0 20 20" 
-            fill="currentColor"
-          >
-            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
-          {t('button.createGame')}
+
+      <div className="flex w-full max-w-sm flex-col gap-3">
+        <Button size="lg" className="h-14 text-base" onClick={() => navigate("/create")} disabled={!online}>
+          <Plus className="mr-2 h-5 w-5" />
+          {t("button.createGame")}
         </Button>
-        
-        <Button 
-          variant="outline" 
-          size="lg"
-          className="flex items-center" 
-          onClick={handleJoinGame}
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-5 w-5 mr-2" 
-            viewBox="0 0 20 20" 
-            fill="currentColor"
-          >
-            <path fillRule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clipRule="evenodd" />
-          </svg>
-          {t('button.joinGame')}
+        <Button variant="outline" size="lg" className="h-14 text-base" onClick={() => navigate("/join")} disabled={!online}>
+          <LogIn className="mr-2 h-5 w-5" />
+          {t("button.joinGame")}
         </Button>
+        <Button variant="secondary" size="lg" className="h-14 text-base" onClick={() => navigate("/offline")}>
+          <Bot className="mr-2 h-5 w-5" />
+          {t("ui.offline.title")}
+        </Button>
+        {!online && <p className="text-center text-sm text-muted-foreground">{t("ui.offline.noNetwork")}</p>}
       </div>
-      
-      <Card className="mt-12 max-w-md w-full">
+
+      <Card className="mt-10 w-full max-w-sm">
         <CardContent className="pt-6">
-          <h2 className="text-2xl font-semibold mb-4">{t('howToPlay.title')}</h2>
-          <ul className="list-disc pl-5 space-y-2">
-            <li>{t('howToPlay.rule1')}</li>
-            <li>{t('howToPlay.rule2')}</li>
-            <li>{t('howToPlay.rule3')}</li>
-            <li>{t('howToPlay.rule4')}</li>
-            <li>{t('howToPlay.rule5')}</li>
-            <li>{t('howToPlay.rule6')}</li>
-            <li>{t('howToPlay.rule7')}</li>
+          <h2 className="mb-3 text-xl font-semibold">{t("howToPlay.title")}</h2>
+          <ul className="list-disc space-y-2 pl-5 text-sm">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <li key={i}>{t(`howToPlay.rule${i}`)}</li>
+            ))}
           </ul>
         </CardContent>
       </Card>

@@ -1,79 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' 'unsafe-inline' https://replit.com; object-src 'none';">
-    <title>Odin Card Game</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <style>
-      .card {
-        transition: all 0.2s ease;
-        transform-origin: bottom center;
-      }
-      .card:hover {
-        transform: translateY(-10px);
-        cursor: pointer;
-      }
-      .player-turn {
-        animation: pulse 2s infinite;
-      }
-      @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(98, 0, 238, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(98, 0, 238, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(98, 0, 238, 0); }
-      }
-      .play-area {
-        min-height: 200px;
-      }
-      .card.dragging {
-        opacity: 0.8;
-        transform: scale(1.05);
-      }
-    </style>
-    <script>
-      // Global error handler
-      window.onerror = function(message, source, lineno, colno, error) {
-        console.error('Global error:', message, source, error);
-        // If the error is a module loading error or React/DOM related, reload the page
-        if ((source && source.includes('assets/')) || 
-            message.includes('useLayoutEffect') || 
-            message.includes('React') || 
-            message.includes('Unexpected token')) {
-          console.log('Detected module loading error, reloading...');
-          window.location.href = window.location.origin + window.location.pathname;
-          return true;  // Prevents the error from being shown in the console
-        }
-        return false; // Let other errors be handled normally
-      };
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval'; object-src 'none';">
+    <meta name="theme-color" content="#1e293b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Odin</title>
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="%BASE_URL%icon-192.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
   </head>
   <body>
     <div id="root"></div>
     <script>
-      // Handle 404 routing for SPA
-      window.addEventListener('error', function(e) {
-        if (e.target.tagName === 'SCRIPT' && e.target.src && e.target.src.includes('assets/')) {
-          window.location.href = '%BASE_URL%';
+      // Si un fichier du jeu ne se charge pas (nouvelle version déployée), on recharge l'accueil une seule fois
+      window.addEventListener('error', function (e) {
+        var t = e.target;
+        if (t && t.tagName === 'SCRIPT' && t.src && t.src.indexOf('/assets/') !== -1) {
+          if (!sessionStorage.getItem('odin.reloaded')) {
+            sessionStorage.setItem('odin.reloaded', '1');
+            window.location.href = '%BASE_URL%';
+          }
         }
       }, true);
-
-      // Prevent React errors from breaking the app
-      if (!window._reactErrorHandled) {
-        window._reactErrorHandled = true;
-        const originalConsoleError = console.error;
-        console.error = function(...args) {
-          if (args[0] && typeof args[0] === 'string' && 
-              (args[0].includes('useLayoutEffect') || args[0].includes('React'))) {
-            console.log('Suppressing React error:', args[0]);
-            return;
-          }
-          return originalConsoleError.apply(console, args);
-        };
-      }
     </script>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
   </body>
 </html>
